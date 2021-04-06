@@ -1,6 +1,6 @@
 import os
 import pyqtgraph as pg
-import queue
+from Queue import Queue
 from PyQt5 import QtGui, uic
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QTime, QTimer, QThread
