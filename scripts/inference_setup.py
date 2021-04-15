@@ -7,6 +7,7 @@ import cv2
 from numpy.ctypeslib import ndpointer
 from PyQt5 import QtCore
 from rali_setup import *
+import amd.rali.types as types
 
 # AMD Neural Net python wrapper
 class AnnAPI:
@@ -293,8 +294,9 @@ class modelInference(QtCore.QObject):
 
 		# Setup Rali Data Loader. 
 		rali_batch_size = 1
-		self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
-										TensorLayout.NCHW, False, self.Mx, self.Ax, self.tensor_dtype)
+		#self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
+		#								TensorLayout.NCHW, False, self.Mx, self.Ax, self.tensor_dtype)
+		self.raliEngine = InferencePipe(imageValidation, self.modelBatchSizeInt, self.rali_mode, self.h_i, self.w_i, rali_batch_size, tensor_layout = types.NCHW, num_threads=1, device_id=0, data_dir=self.inputImageDir, crop=224, rali_cpu=True)
 		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, self.modelBatchSizeInt)
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])

@@ -4,6 +4,12 @@ sys.path.append('/opt/rocm/mivisionx/rali/python/')
 from rali import *
 from rali_image_iterator import *
 from rali_common import *
+from enum import Enum
+from amd.rali.plugin.pytorch import RALIClassificationIterator
+from amd.rali.plugin.pytorch import RALI_iterator
+from amd.rali.pipeline import Pipeline
+import amd.rali.ops as ops
+import amd.rali.types as types
 
 #batch size = 64
 raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain', 
@@ -109,13 +115,26 @@ raliList_mode5_16 = ['original', 'nop', 'nop', 'nop',
 					'nop', 'nop', 'nop', 'nop']
 
 # Class to initialize Rali and call the augmentations 
-class DataLoader(RaliGraph):
-	def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter,
-				 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0], tensor_dtype=TensorDataType.FLOAT32):
-		RaliGraph.__init__(self, rali_batch_size, affinity)
+#class DataLoader(RaliGraph):
+class InferencePipe(Pipeline):
+	#def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter,
+	#			 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0], tensor_dtype=TensorDataType.FLOAT32):
+	#	RaliGraph.__init__(self, rali_batch_size, affinity)
+	def __init__(self, image_validation, model_batch_size, raliMode, h_img, w_img, rali_batch_size, tensor_layout, num_threads, device_id, data_dir, crop, rali_cpu = True):
+		super(InferencePipe, self).__init__(rali_batch_size, num_threads, device_id, seed=12 + device_id,rali_cpu=rali_cpu)
+		world_size = 1
+		local_rank = 0
+		self.input = ops.FileReader(file_root=data_dir, shard_id=local_rank, num_shards=world_size, random_shuffle=True)
+		rali_device = 'cpu' if rali_cpu else 'gpu'
+		decoder_device = 'cpu' if rali_cpu else 'mixed'
+		device_memory_padding = 211025920 if decoder_device == 'mixed' else 0
+		host_memory_padding = 140544512 if decoder_device == 'mixed' else 0
+		self.decode = ops.ImageDecoder(device=decoder_device, output_type=types.RGB,
+													device_memory_padding=device_memory_padding,
+													host_memory_padding=host_memory_padding)
 		self.validation_dict = {}
 		self.process_validation(image_validation)
-		self.setSeed(0)
+		#self.setSeed(0)
 		self.aug_strength = 0
 		#params for contrast
 		self.min_param = RaliIntParameter(0)
@@ -136,105 +155,128 @@ class DataLoader(RaliGraph):
 		#rali list of augmentation
 		self.rali_list = None
 
+        self.resize = ops.Resize(resize_x=h_img, resize_y=w_img, preserve = True)	
+        self.warped = ops.WarpAffine(preserve=True)
+        self.contrast_img = ops.Contrast(min_contrast=self.min_param, max_contrast=self.max_param, preserve=True)
+        self.rain_img = ops.Rain(preserve=True)
+        self.bright_img = ops.Brightness(self.alpha_param, preserve=True)
+        self.temp_img = ops.ColorTemp(alpha=self.adjustment_param, preserve=True)
+        self.exposed_img = ops.Exposure(exposure=self.shift_param, preserve=True)
+        self.vignette_img = ops.Vignette(preserve=True)
+        self.blur_img = ops.Blur(preserve=True)
+        self.snow_img = ops.Snow(preserve=True)
+        self.pixelate_img = ops.Pixelate(preserve=True)
+        self.snp_img = ops.SnPNoise(snpNoise=self.sdev_param, preserve=True)
+        self.gamma_img = ops.GammaCorrection(gamma=self.gamma_shift_param, preserve=True)
+        self.rotate_img = ops.Rotate(angle=self.degree_param, preserve=True)
+        self.flip_img = ops.Flip(self.input, True, 1)
+        self.blend_img = ops.Blend(self.contrast_img, preserve=True)
+
+        """
 		if model_batch_size == 16:
 			if raliMode == 1:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.resize = ops.Resize(resize_x=h_img, resize_y=w_img, preserve = True)
+				
+				self.warped = ops.WarpAffine(preserve=True)
 
-				self.warped = self.warpAffine(self.input,True)
+				self.contrast_img = ops.Contrast(min_contrast=self.min_param, max_contrast=self.max_param, preserve=True)
+				self.rain_img = ops.Rain(preserve=True)
 
-				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
-				self.rain_img = self.rain(self.input, True)
+				self.bright_img = ops.Brightness(self.alpha_param, preserve=True)
+				self.temp_img = ops.ColorTemp(alpha=self.adjustment_param, preserve=True)
 
-				self.bright_img = self.brightness(self.input,True, self.alpha_param)
-				self.temp_img = self.colorTemp(self.input, True, self.adjustment_param)
+				self.exposed_img = ops.Exposure(exposure=self.shift_param, preserve=True)
+				self.vignette_img = ops.Vignette(preserve=True)
+				self.blur_img = ops.Blur(preserve=True)
+				self.snow_img = ops.Snow(preserve=True)
 
-				self.exposed_img = self.exposure(self.input, True, self.shift_param)
-				self.vignette_img = self.vignette(self.input, True)
-				self.blur_img = self.blur(self.input, True)
-				self.snow_img = self.snow(self.input, True)
+				self.pixelate_img = ops.Pixelate(preserve=True)
+				self.snp_img = ops.SnPNoise(snpNoise=self.sdev_param, preserve=True)
+				self.gamma_img = ops.GammaCorrection(gamma=self.gamma_shift_param, preserve=True)
 
-				self.pixelate_img = self.pixelate(self.input, True)
-				self.snp_img = self.SnPNoise(self.input, True, self.sdev_param)
-				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
+				self.rotate_img = ops.Rotate(angle=self.degree_param, preserve=True)
 
-				self.rotate_img = self.rotate(self.input, True, self.degree_param)
-				self.flip_img = self.flip(self.input, True, 1)
+				self.flip_img = ops.Flip(self.input, True, 1)
 				#self.jitter_img = self.jitter(self.input, True)
 				
-				self.blend_img = self.blend(self.input, self.contrast_img, True)
+				self.blend_img = ops.Blend(self.contrast_img, preserve=True)
+				
 			elif raliMode == 2:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.resize = ops.Resize(resize_x=h_img, resize_y=w_img, preserve = True)
+				
+				self.warped = ops.WarpAffine(preserve=True)
 
-				self.warped = self.warpAffine(self.input,True)
+				self.contrast_img = ops.Contrast(min_contrast=self.min_param, max_contrast=self.max_param, preserve=True)
+				self.rain_img = ops.Rain(preserve=True)
 
-				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
-				self.rain_img = self.rain(self.contrast_img, True)
+				self.bright_img = ops.Brightness(self.alpha_param, preserve=True)
+				self.temp_img = ops.ColorTemp(alpha=self.adjustment_param, preserve=True)
 
-				self.bright_img = self.brightness(self.input,True, self.alpha_param)
-				self.temp_img = self.colorTemp(self.bright_img, True, self.adjustment_param)
+				self.exposed_img = ops.Exposure(exposure=self.shift_param, preserve=True)
+				self.vignette_img = ops.Vignette(preserve=True)
+				self.blur_img = ops.Blur(preserve=True)
+				self.snow_img = ops.Snow(preserve=True)
 
-				self.exposed_img = self.exposure(self.input, True, self.shift_param)
-				self.vignette_itensor_dtypemg = self.vignette(self.exposed_img, True)
-				self.blur_img = self.blur(self.input, True)
-				self.snow_img = self.snow(self.blur_img, True)
+				self.pixelate_img = ops.Pixelate(preserve=True)
+				self.snp_img = ops.SnPNoise(snpNoise=self.sdev_param, preserve=True)
+				self.gamma_img = ops.GammaCorrection(gamma=self.gamma_shift_param, preserve=True)
 
-				self.pixelate_img = self.pixelate(self.input, True)
-				self.snp_img = self.SnPNoise(self.pixelate_img, True, self.sdev_param)
-				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
-
-				self.rotate_img = self.rotate(self.input, True, self.degree_param)
-				self.flip_img = self.flip(self.input, True, 1)
-				#self.jitter_img = self.jitter(self.rotate_img, True)
-
-				self.blend_img = self.blend(self.rotate_img, self.warped, True)
+				self.rotate_img = ops.Rotate(angle=self.degree_param, preserve=True)
+				self.flip_img = ops.Flip(self.input, True, 1)
+				#self.jitter_img = self.jitter(self.input, True)
+				
+				self.blend_img = ops.Blend(self.contrast_img, preserve=True)
 			elif raliMode == 3:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
-				self.warped = self.warpAffine(self.input,True)
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
+				self.warped = ops.WarpAffine(preserve=True)
 
-				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
-				self.rain_img = self.rain(self.warped, True)
+				self.contrast_img = ops.Contrast(min_contrast=self.min_param, max_contrast=self.max_param, preserve=True)
+				self.rain_img = ops.Rain(preserve=True)
 
-				self.bright_img = self.brightness(self.input,True, self.alpha_param)
-				self.temp_img = self.colorTemp(self.input, True, self.adjustment_param)
+				self.bright_img = ops.Brightness(self.alpha_param, preserve=True)
+				self.temp_img = ops.ColorTemp(alpha=self.adjustment_param, preserve=True)
 
-				self.exposed_img = self.exposure(self.input, True, self.shift_param)
-				self.vignette_img = self.vignette(self.input, True)
-				self.blur_img = self.blur(self.input, True)
-				self.snow_img = self.snow(self.vignette_img, True)
+				self.exposed_img = ops.Exposure(exposure=self.shift_param, preserve=True)
+				self.vignette_img = ops.Vignette(preserve=True)
+				self.blur_img = ops.Blur(preserve=True)
+				self.snow_img = ops.Snow(preserve=True)
 
-				self.pixelate_img = self.pixelate(self.input, True)
-				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
-				self.snp_img = self.SnPNoise(self.gamma_img, True, self.sdev_param)
+				self.pixelate_img = ops.Pixelate(preserve=True)
+				self.snp_img = ops.SnPNoise(snpNoise=self.sdev_param, preserve=True)
+				self.gamma_img = ops.GammaCorrection(gamma=self.gamma_shift_param, preserve=True)
 
-				self.rotate_img = self.rotate(self.input, True, self.degree_param)
-				self.flip_img = self.flip(self.input, True, 1)
-				#self.jitter_img = self.jitter(self.pixelate_img, True)
-
-				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
+				self.rotate_img = ops.Rotate(angle=self.degree_param, preserve=True)
+				self.flip_img = ops.Flip(self.input, True, 1)
+				#self.jitter_img = self.jitter(self.input, True)
+				
+				self.blend_img = ops.Blend(self.contrast_img, preserve=True)
 			elif raliMode == 4:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
-
-				for i in range(15):
-					self.copy_img = self.copy(self.input, True)
-
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
+				#for i in range(15):
+				#	self.copy_img = ops.Copy(preserve=True)
+				
 			elif raliMode == 5:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
-
-				for i in range(15):
-					self.nop_img = self.nop(self.input, True)
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
+				#for i in range(15):
+				#	self.nop_img = self.Nop(preserve=True)
+				
 		elif model_batch_size == 64:
 			if raliMode == 1:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, False)
-
-				self.rot150_img = self.rotate(self.input, False, 150)
-				self.flip_img = self.flip(self.input, False)
-				self.rot45_img = self.rotate(self.input, False, 45)
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				#self.input = self.resize(self.jpg_img, h_img, w_img, False)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
+				self.rot150_img = ops.Rotate(preserve=False, angle=150)
+				self.flip_img = ops.Flip(preserve=False)
+				self.rot45_img = ops.Rotate(preserve=False, angle=45)
 
 				self.setof16_mode1(self.input, h_img, w_img)
 				self.setof16_mode1(self.rot45_img, h_img, w_img)
@@ -242,9 +284,10 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.rot150_img , h_img, w_img)
 				
 			elif raliMode == 2:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, False)
-
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				#self.input = self.resize(self.jpg_img, h_img, w_img, False)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
 				#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
 				self.warpAffine1_img = self.warpAffine(self.input, False, [[0.5,0],[0,2],[None,None]]) #squeeze
 				self.fishEye_img = self.fishEye(self.input, False)
@@ -254,11 +297,12 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.warpAffine1_img, h_img, w_img)
 				self.setof16_mode1(self.fishEye_img, h_img, w_img)
 				self.setof16_mode1(self.lensCorrection_img, h_img, w_img)
-
+				
 			elif raliMode == 3:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, False)
-
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				#self.input = self.resize(self.jpg_img, h_img, w_img, False)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
 				self.colorTemp1_img = self.colorTemp(self.input, False, 10)
 				self.colorTemp2_img = self.colorTemp(self.input, False, 20)
 				self.warpAffine2_img = self.warpAffine(self.input, False, [[2,0],[0,1],[None,None]]) #stretch
@@ -267,23 +311,28 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
 				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
 				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)
+				
 			elif raliMode == 4:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
-
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				#self.input = self.resize(self.jpg_img, h_img, w_img, True)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
 				for i in range(63):
 					self.copy_img = self.copy(self.input, True)
-
+				
 			elif raliMode == 5:	
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
-				self.input = self.resize(self.jpg_img, h_img, w_img, True)
-
+				#self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				#self.input = self.resize(self.jpg_img, h_img, w_img, True)
+				self.resize = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
+				
 				for i in range(63):
 					self.nop_img = self.nop(self.input, True)
+		"""		
 		#rali iterator
-		if self.build() != 0:
-			raise Exception('Failed to build the augmentation graph')
-		self.tensor_format =tensor_layout
+		#if self.build() != 0:
+		#	raise Exception('Failed to build the augmentation graph')
+		"""
+		self.tensor_format = tensor_layout
 		self.multiplier = multiplier
 		self.offset = offset
 		self.reverse_channels = reverse_channels
@@ -297,6 +346,33 @@ class DataLoader(RaliGraph):
 		height = self.h*self.n
 		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
 		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
+		"""
+	def define_graph(self, model_batch_size, raliMode):
+		#rng = self.coin()
+		self.jpegs, self.labels = self.input(name="Reader")
+		images = self.decode(self.jpegs)
+
+        if model_batch_size == 16:
+            if raliMode == 1:
+                images = self.resize(images)
+                images = self.warped(images)
+                images = self.contrast(images)
+                images = self.rain_img(images)
+                images = self.bright_img(images)
+                images = self.temp_img(images)
+                images = self.exposed_img(images)
+                images = self.vignette_img(images)
+                images = self.blur_img(images)
+                images = self.snow_img(images)
+                images = self.pixelate_img(images)
+                images = self.snp_img(images)
+                images = self.gamma_img(images)
+                images = self.rotate_img(images)
+                images = self.flip_img(images)
+                output = self.blend_img(images)
+                return [output, self.labels]
+            elif raliMode == 2:
+                
 
 	def get_input_name(self):
 		size = self.raliGetImageNameLen(0)
@@ -313,30 +389,30 @@ class DataLoader(RaliGraph):
 		return self.validation_dict[self.get_input_name()]
 
 	def setof16_mode1(self, input_image, h_img, w_img):
-		self.resized_image = self.resize(input_image, h_img, w_img, True)
+		self.resized_image = ops.Resize(device=rali_device, resize_x=h_img, resize_y=w_img)
 
-		self.warped = self.warpAffine(input_image,True)
+		self.warped = ops.WarpAffine(preserve=True)
 
-		self.contrast_img = self.contrast(input_image,True, self.min_param, self.max_param)
-		self.rain_img = self.rain(input_image, True)
+		self.contrast_img = ops.Contrast(min_contrast=self.min_param, max_contrast=self.max_param, preserve=True)
+		self.rain_img = ops.Rain(preserve=True)
 
-		self.bright_img = self.brightness(input_image,True, self.alpha_param)
-		self.temp_img = self.colorTemp(input_image, True, self.adjustment_param)
+		self.bright_img = ops.Brightness(self.alpha_param, preserve=True)
+		self.temp_img = ops.ColorTemp(alpha=self.adjustment_param, preserve=True)
 
-		self.exposed_img = self.exposure(input_image, True, self.shift_param)
-		self.vignette_img = self.vignette(input_image, True)
-		self.blur_img = self.blur(input_image, True)
-		self.snow_img = self.snow(input_image, True)
+		self.exposed_img = ops.Exposure(exposure=self.shift_param, preserve=True)
+		self.vignette_img = ops.Vignette(preserve=True)
+		self.blur_img = ops.Blur(preserve=True)
+		self.snow_img = ops.Snow(preserve=True)
 
-		self.pixelate_img = self.pixelate(input_image, True)
-		self.snp_img = self.SnPNoise(input_image, True, self.sdev_param)
-		self.gamma_img = self.gamma(input_image, True, self.gamma_shift_param)
+		self.pixelate_img = ops.Pixelate(preserve=True)
+		self.snp_img = ops.SnPNoise(snpNoise=self.sdev_param, preserve=True)
+		self.gamma_img = ops.GammaCorrection(gamma=self.gamma_shift_param, preserve=True)
 
-		self.rotate_img = self.rotate(input_image, True, self.degree_param)
-		self.flip_img = self.flip(input_image, True, 1)
-		#self.jitter_img = self.jitter(input_image, True)
-		
-		self.blend_img = self.blend(input_image, self.contrast_img, True)
+		self.rotate_img = ops.Rotate(angle=self.degree_param, preserve=True)
+		self.flip_img = ops.Flip(self.input, True, 1)
+		#self.jitter_img = self.jitter(self.input, True)
+				
+		self.blend_img = ops.Blend(self.contrast_img, preserve=True)
 
 	def updateAugmentationParameter(self, augmentation):
 		#values for contrast
@@ -376,13 +452,15 @@ class DataLoader(RaliGraph):
 		self.degree_param.update(curr_degree+degree)
 
 	def start_iterator(self):
-		self.reset()
+		#self.reset()
+		self.raliResetLoaders()
 		
 	def get_next_augmentation(self):
-		if self.raliIsEmpty() == 1:
+		if self.IsEmpty() == 1:
 			return -1
 			#raise StopIteration
 		self.renew_parameters()
+		"""
 		if self.run() != 0:
 			#raise StopIteration
 			return -1
@@ -392,7 +470,8 @@ class DataLoader(RaliGraph):
 
 		else:
 			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
-
+		"""
+		self.out_image , self.out_tensor = self.next()
 		return self.out_image , self.out_tensor
 
 	def get_rali_list(self, raliMode, model_batch_size):
