@@ -8,6 +8,8 @@ from numpy.ctypeslib import ndpointer
 from PyQt5 import QtCore
 from rali_setup import *
 import amd.rali.types as types
+from amd.rali.plugin.pytorch import RALI_iterator
+from amd.rali.pipeline import Pipeline
 
 # AMD Neural Net python wrapper
 class AnnAPI:
@@ -297,6 +299,8 @@ class modelInference(QtCore.QObject):
 		#self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
 		#								TensorLayout.NCHW, False, self.Mx, self.Ax, self.tensor_dtype)
 		self.raliEngine = InferencePipe(imageValidation, self.modelBatchSizeInt, self.rali_mode, self.h_i, self.w_i, rali_batch_size, tensor_layout = types.NCHW, num_threads=1, device_id=0, data_dir=self.inputImageDir, crop=224, rali_cpu=True)
+		self.raliEngine.verify_graph()
+		self.imageIterator = RALI_iterator(self.raliEngine)
 		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, self.modelBatchSizeInt)
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])
@@ -329,10 +333,11 @@ class modelInference(QtCore.QObject):
 
 	def runInference(self):
 		while self.setupDone:
-			while not self.pauseState and self.raliEngine.getReaminingImageCount() > 0:
+			while not self.pauseState and self.raliEngine.getRemainingImages() > 0:
 				msFrame = 0.0
 				start = time.time()
-				image_batch, image_tensor = self.raliEngine.get_next_augmentation()
+				image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
+				image_batch = cv2.cvtColor(image_tensor, cv2.COLOR_RGB2BGR)
 				frame = image_tensor
 				original_image = image_batch[0:self.h_i, 0:self.w_i]
 				cloned_image = np.copy(image_batch)
@@ -341,7 +346,7 @@ class modelInference(QtCore.QObject):
 				imageFileName = self.raliEngine.get_input_name()
 				groundTruthIndex = self.raliEngine.get_ground_truth()
 				groundTruthIndex = int(groundTruthIndex)
-				groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+				groundTruthLabel = self.labelNames[groundTruthIndex]
 
 				end = time.time()
 				msFrame += (end-start)*1000
@@ -350,8 +355,8 @@ class modelInference(QtCore.QObject):
 	
 				if self.gui:
 					text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-					text_off_x = (self.w_i/2) - (text_width/2)
-					text_off_y = self.h_i-7
+					text_off_x = int(self.w_i/2) - (text_width/2)
+					text_off_y = int(self.h_i-7)
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 					cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 					cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)

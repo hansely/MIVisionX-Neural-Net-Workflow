@@ -137,6 +137,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def initEngines(self):
         self.receiver_thread = QThread()
+        print("batch_size = ", self.batch_size)
         # Creating an object for inference.
         self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
                                                 self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
