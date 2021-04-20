@@ -292,7 +292,7 @@ def main():
         time_elapsed = end_time - start_time
         with open(results_file, "r") as infile:
             reader = csv.reader(infile)
-            next(reader, None)  # skip the header
+            #next(reader, None)  # skip the header
             for row in reader:
                 old_timestamp = float(row[4])     
         with open(results_file, 'w') as outfile:
