@@ -140,10 +140,10 @@ class modelInference(QtCore.QObject):
             self.replaceModel = True
 
         # set fp16 inference turned on/off
-        self.tensor_dtype = TensorDataType.FLOAT32
+        self.tensor_dtype = types.FLOAT
         if(fp16 != 'no'):
             self.FP16inference = True
-            self.tensor_dtype=TensorDataType.FLOAT16
+            self.tensor_dtype=types.FLOAT16
 
         #set loop parameter based on user input
         if loop == 'yes':
@@ -296,8 +296,6 @@ class modelInference(QtCore.QObject):
 
         # Setup Rali Data Loader. 
         rali_batch_size = 1
-        #self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
-        #                               TensorLayout.NCHW, False, self.Mx, self.Ax, self.tensor_dtype)
         self.raliEngine = InferencePipe(imageValidation, self.modelBatchSizeInt, self.rali_mode, self.h_i, self.w_i, rali_batch_size, tensor_layout = types.NCHW, num_threads=1, device_id=0, data_dir=self.inputImageDir, crop=224, rali_cpu=True)
         self.raliEngine.verify_graph()
         self.imageIterator = RALI_iterator(self.raliEngine)
@@ -337,6 +335,11 @@ class modelInference(QtCore.QObject):
                 msFrame = 0.0
                 start = time.time()
                 image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
+                if self.FP16inference == False:
+                    image_tensor = image_tensor.astype('float32')
+                else:
+                    image_tensor = image_tensor.astype('float16')
+                #print(type(image_tensor), image_tensor.shape, image_tensor.size, image_tensor.dtype)
                 image_batch = cv2.cvtColor(image_tensor, cv2.COLOR_RGB2BGR)
                 frame = image_tensor
                 original_image = image_batch[0:self.h_i, 0:self.w_i]
@@ -360,7 +363,6 @@ class modelInference(QtCore.QObject):
                     box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
                     color = (245, 197, 66)
                     thickness = 3
-                    print("type OG= ", type(original_image))
                     cv2.rectangle(original_image, (text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2), color, thickness)
                     cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
                     self.origQueue.put(original_image)

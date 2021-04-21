@@ -203,7 +203,7 @@ class InferencePipe(Pipeline):
         if model_batch_size == 64:
             if raliMode == 1:
                 self.rot150_img = ops.Rotate(angle=self.degree_param_150)
-                self.flip1_img = ops.Flip()
+                self.flip1_img = ops.Flip(flip=self.flip_param)
                 self.rot45_img = ops.Rotate(angle=self.degree_param_45)
             elif raliMode == 2:
                 self.warpAffine1_img = ops.WarpAffine(matrix=[0.5, 0 , 0, 2, None, None]) #squeeze
@@ -323,10 +323,12 @@ class InferencePipe(Pipeline):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
 
     def get_input_name(self):
+        size = 0
+        imageName = ''
         size = self.GetImageNameLen(0)
-        #ret = ctypes.create_string_buffer(size)
-        imageName = self.GetImageName(size)
-        return imageName.decode("utf-8")
+        imageName = (self.GetImageName(size)).decode()
+        #print(len(imageName), imageName)
+        return imageName
 
     def process_validation(self, validation_list):
         for i in range(len(validation_list)):
@@ -339,7 +341,6 @@ class InferencePipe(Pipeline):
     def setof16_mode1(self, input_image):
         self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,input_image,True)
         self.warped_img.output = self.warped_img.rali_c_func_call(self._handle,input_image,True)
-        self.contrast_img.output = self.contrast_img.rali_c_func_call(self._handle,input_image,True)
         self.contrast_img.output = self.contrast_img.rali_c_func_call(self._handle,input_image,True)
         self.rain_img.output = self.rain_img.rali_c_func_call(self._handle,input_image,True)
         self.bright_img.output = self.bright_img.rali_c_func_call(self._handle,input_image,True)
