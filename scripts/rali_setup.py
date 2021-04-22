@@ -4,6 +4,7 @@ from amd.rali.plugin.pytorch import RALI_iterator
 from amd.rali.pipeline import Pipeline
 import amd.rali.ops as ops
 import amd.rali.types as types
+from ctypes import create_string_buffer
 
 #batch size = 64
 raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain', 
@@ -323,11 +324,12 @@ class InferencePipe(Pipeline):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
 
     def get_input_name(self):
-        size = 0
-        imageName = ''
-        size = self.GetImageNameLen(0)
+        #size = 0
+        #imageName = bytearray()
+        size = self.GetImageNameLength(0)
+        imageName = create_string_buffer(size)
         imageName = (self.GetImageName(size)).decode()
-        #print(len(imageName), imageName)
+        print(len(imageName), imageName)
         return imageName
 
     def process_validation(self, validation_list):

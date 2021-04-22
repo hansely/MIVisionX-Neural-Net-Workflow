@@ -335,16 +335,18 @@ class modelInference(QtCore.QObject):
                 msFrame = 0.0
                 start = time.time()
                 image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
-                if self.FP16inference == False:
-                    image_tensor = image_tensor.astype('float32')
-                else:
-                    image_tensor = image_tensor.astype('float16')
+                cv2.imshow('image_tensor', cv2.cvtColor(image_tensor, cv2.COLOR_RGB2BGR))
                 #print(type(image_tensor), image_tensor.shape, image_tensor.size, image_tensor.dtype)
                 image_batch = cv2.cvtColor(image_tensor, cv2.COLOR_RGB2BGR)
-                frame = image_tensor
                 original_image = image_batch[0:self.h_i, 0:self.w_i]
+                cv2.imshow('original_image', original_image)
                 cloned_image = np.copy(image_batch)
-            
+                if self.FP16inference == False:
+                    frame = image_tensor.astype('float32')
+                else:
+                    frame = image_tensor.astype('float16')
+                #frame = image_tensor
+
                 #get image file name and ground truth
                 imageFileName = self.raliEngine.get_input_name()
                 groundTruthIndex = self.raliEngine.get_ground_truth()
