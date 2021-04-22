@@ -17,8 +17,8 @@ class InferenceControl(QtWidgets.QMainWindow):
         self.initUI()
 
     def initUI(self):
-        uic.loadUi("inference_control.ui", self)
         #self.setStyleSheet("background-color: white")
+        uic.loadUi("inference_control.ui", self)
         self.tabWidget.setCurrentIndex(0)
         self.ti_pushButton.clicked.connect(self.confirmMode)
         self.close_pushButton.clicked.connect(self.closeEvent)
@@ -26,36 +26,7 @@ class InferenceControl(QtWidgets.QMainWindow):
         self.run_pushButton.setEnabled(False)
         self.close_pushButton.setStyleSheet("color: white; background-color: darkRed")
 
-        #inference
-        self.upload_comboBox.activated.connect(self.fromFile)
-        self.file_pushButton.clicked.connect(self.browseFile)
-        self.output_pushButton.clicked.connect(self.browseOutput)
-        self.label_pushButton.clicked.connect(self.browseLabel)
-        self.image_pushButton.clicked.connect(self.browseImage)
-        self.val_pushButton.clicked.connect(self.browseVal)
-        self.hier_pushButton.clicked.connect(self.browseHier)
-        self.file_lineEdit.textChanged.connect(self.checkInput)
-        self.name_lineEdit.textChanged.connect(self.checkInput)
-        self.idims_lineEdit.textChanged.connect(self.checkInput)
-        self.odims_lineEdit.textChanged.connect(self.checkInput)
-        self.output_lineEdit.textChanged.connect(self.checkInput)
-        self.label_lineEdit.textChanged.connect(self.checkInput)
-        self.image_lineEdit.textChanged.connect(self.checkInput)
-        self.image_lineEdit.textChanged.connect(self.checkInput)
-        self.file_lineEdit.setPlaceholderText("File Directory [required]")
-        self.name_lineEdit.setPlaceholderText("Model Name [required]")
-        self.idims_lineEdit.setPlaceholderText("c,h,w [required]")
-        self.odims_lineEdit.setPlaceholderText("c,h,w [required]")
-        self.padd_lineEdit.setPlaceholderText("r,g,b [optional]")
-        self.pmul_lineEdit.setPlaceholderText("r,g,b [optional]")
-        self.output_lineEdit.setPlaceholderText("Output Directory [required]")
-        self.label_lineEdit.setPlaceholderText("Label File [required]")
-        self.image_lineEdit.setPlaceholderText("Image Folder [required]")
-        self.val_lineEdit.setPlaceholderText("[optional]")
-        self.hier_lineEdit.setPlaceholderText("[optional]")
-        self.gui_checkBox.setChecked(True)
-        self.readSetupFile()
-
+    def initTraining(self):
         # training
         self.tidims_lineEdit.setPlaceholderText("n,c,h,w [required]")
         self.dpath_lineEdit.setPlaceholderText("Data Directory [required]")
@@ -83,6 +54,59 @@ class InferenceControl(QtWidgets.QMainWindow):
         # self.dpath_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/imagenet_10dir")
         self.tgui_checkBox.setChecked(True)
 
+    def initInference(self):
+        #inference
+        self.upload_comboBox.activated.connect(self.fromFile)
+        self.file_pushButton.clicked.connect(self.browseFile)
+        self.output_pushButton.clicked.connect(self.browseOutput)
+        self.label_pushButton.clicked.connect(self.browseLabel)
+        self.image_pushButton.clicked.connect(self.browseImage)
+        self.val_pushButton.clicked.connect(self.browseVal)
+        self.hier_pushButton.clicked.connect(self.browseHier)
+        self.file_lineEdit.textChanged.connect(self.checkInput)
+        self.name_lineEdit.textChanged.connect(self.checkInput)
+        self.idims_lineEdit.textChanged.connect(self.checkInput)
+        self.odims_lineEdit.textChanged.connect(self.checkInput)
+        self.output_lineEdit.textChanged.connect(self.checkInput)
+        self.label_lineEdit.textChanged.connect(self.checkInput)
+        self.image_lineEdit.textChanged.connect(self.checkInput)
+        self.image_lineEdit.textChanged.connect(self.checkInput)
+        self.mode_comboBox.setEnabled(True)
+        self.output_lineEdit.setEnabled(True)
+        self.label_lineEdit.setEnabled(True)
+        self.image_lineEdit.setEnabled(True)
+        self.val_lineEdit.setEnabled(True)
+        self.hier_lineEdit.setEnabled(True)
+        self.output_pushButton.setEnabled(True)
+        self.label_pushButton.setEnabled(True)
+        self.image_pushButton.setEnabled(True)
+        self.val_pushButton.setEnabled(True)
+        self.hier_pushButton.setEnabled(True)
+        self.file_lineEdit.setPlaceholderText("File Directory [required]")
+        self.name_lineEdit.setPlaceholderText("Model Name [required]")
+        self.idims_lineEdit.setPlaceholderText("c,h,w [required]")
+        self.odims_lineEdit.setPlaceholderText("c,h,w [required]")
+        self.padd_lineEdit.setPlaceholderText("r,g,b [optional]")
+        self.pmul_lineEdit.setPlaceholderText("r,g,b [optional]")
+        self.output_lineEdit.setPlaceholderText("Output Directory [required]")
+        self.label_lineEdit.setPlaceholderText("Label File [required]")
+        self.image_lineEdit.setPlaceholderText("Image Folder [required]")
+        self.val_lineEdit.setPlaceholderText("[optional]")
+        self.hier_lineEdit.setPlaceholderText("[optional]")
+        self.gui_checkBox.setChecked(True)
+        self.readSetupFile()
+
+        self.file_lineEdit.setText("/home/hansel/MIVisionX/onnxModels/squeezenet/model.onnx")
+        self.format_comboBox.setCurrentIndex(1)
+        self.name_lineEdit.setText("sq")
+        self.idims_lineEdit.setText("3,224,224")
+        self.odims_lineEdit.setText("1000,1,1")
+        self.output_lineEdit.setText("./")
+        self.label_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/labels.txt")
+        self.image_lineEdit.setText("/home/hansel/MIVisionX/MIVisionX/data/images/AMD-tinyDataSet")
+        self.val_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/AMD-tinyDataSet-val.txt")
+        self.hier_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/hierarchy.csv")
+      
     def confirmMode(self):
         self.tabWidget.setEnabled(True)
         self.ti_comboBox.setEnabled(False)
@@ -93,12 +117,13 @@ class InferenceControl(QtWidgets.QMainWindow):
             self.tabWidget.setCurrentIndex(0)
             self.tabWidget.setTabEnabled(0, True)
             self.tabWidget.setTabEnabled(1, False)
+            self.initTraining()
         elif self.ti_comboBox.currentIndex() == 1:
             self.mode = Mode.INFERENCE
             self.tabWidget.setCurrentIndex(1)
             self.tabWidget.setTabEnabled(1, True)
             self.tabWidget.setTabEnabled(0, False)
-
+            self.initInference()
 
 
     def browseFile(self):
@@ -120,7 +145,7 @@ class InferenceControl(QtWidgets.QMainWindow):
         self.label_lineEdit.setText(QtWidgets.QFileDialog.getOpenFileName(self, 'Open File', './', '*.txt')[0])
 
     def browseImage(self):
-        self.image_lineEdit.setText(QtWidgets.QFileDialog.getExistingDirectory(self, 'Open Folder', './')[0])
+        self.image_lineEdit.setText(QtWidgets.QFileDialog.getExistingDirectory(self, 'Open Folder', './'))
 
     def browseVal(self):
         self.val_lineEdit.setText(QtWidgets.QFileDialog.getOpenFileName(self, 'Open File', './', '*.txt')[0])

@@ -268,7 +268,7 @@ class modelInference(QtCore.QObject):
                     print("ERROR: Converting NNIR to OpenVX Failed")
                     quit()
 
-        os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+        # os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
         print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
         # create inference classifier
@@ -342,14 +342,17 @@ class modelInference(QtCore.QObject):
                 #print(type(image_tensor), image_tensor.shape, image_tensor.size, image_tensor.dtype)
                 image_batch = cv2.cvtColor(image_tensor, cv2.COLOR_RGB2BGR)
                 frame = image_tensor
+                
                 original_image = image_batch[0:self.h_i, 0:self.w_i]
+                cv2.imshow("window", original_image)
+                cv2.waitKey(0)
                 cloned_image = np.copy(image_batch)
             
                 #get image file name and ground truth
-                imageFileName = self.raliEngine.get_input_name()
-                groundTruthIndex = self.raliEngine.get_ground_truth()
-                groundTruthIndex = int(groundTruthIndex)
-                groundTruthLabel = self.labelNames[groundTruthIndex]
+                # imageFileName = self.raliEngine.get_input_name()
+                # groundTruthIndex = self.raliEngine.get_ground_truth()
+                # groundTruthIndex = int(groundTruthIndex)
+                # groundTruthLabel = self.labelNames[groundTruthIndex]
 
                 end = time.time()
                 msFrame += (end-start)*1000
@@ -357,14 +360,14 @@ class modelInference(QtCore.QObject):
                     print ('%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms')
     
                 if self.gui:
-                    text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-                    text_off_x = int(self.w_i/2) - (text_width/2)
-                    text_off_y = int(self.h_i-7)
-                    box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-                    color = (245, 197, 66)
-                    thickness = 3
-                    cv2.rectangle(original_image, (text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2), color, thickness)
-                    cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+                    # text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+                    # text_off_x = int(self.w_i/2 - text_width/2)
+                    # text_off_y = int(self.h_i-7)
+                    # box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+                    # color = (245, 197, 66)
+                    # thickness = 3
+                    # cv2.rectangle(original_image, (text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2), color, thickness)
+                    # cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
                     self.origQueue.put(original_image)
                 
                 # call python inference. Returns output tensor with 1000 class probabilites
@@ -384,7 +387,7 @@ class modelInference(QtCore.QObject):
                 for i in range(self.modelBatchSizeInt):
                     #process the output tensor
                     start = time.time()
-                    correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
+                    # correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
                     end = time.time()
                     msFrame += (end-start)*1000
                     if (self.verbosePrint):
@@ -396,16 +399,16 @@ class modelInference(QtCore.QObject):
                         for cnt in range(0,textCount):
                             currentText = augmentationText[cnt]
                             text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-                            text_off_x = (self.w_i/2) - (text_width/2)
-                            text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
+                            text_off_x = (int)((self.w_i/2) - (text_width/2))
+                            text_off_y = ((int)(i*self.h_i)+self.h_i-7-(cnt*text_height))
                             box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
                             cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
                             cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
                         # put augmented image result
-                        if not correctResult:
-                            cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-                        else:      
-                            cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+                        # if not correctResult:
+                        #     cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+                        # else:      
+                        #     cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
                 if self.gui:
                     #split image as needed

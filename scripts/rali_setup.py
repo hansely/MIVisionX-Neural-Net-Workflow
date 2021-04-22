@@ -327,7 +327,7 @@ class InferencePipe(Pipeline):
         imageName = ''
         size = self.GetImageNameLen(0)
         imageName = (self.GetImageName(size)).decode()
-        #print(len(imageName), imageName)
+        print(len(imageName), imageName)
         return imageName
 
     def process_validation(self, validation_list):
