@@ -257,7 +257,7 @@ def main():
     crop = int(input_dimensions[3]) #crop to the width or height of model input_dimensions
     
     file_directory = os.path.join(os.path.expanduser('~'), 'hostDrive')
-    results_file =  os.path.join(file_directory, 'statistics.csv')        	
+    results_file =  os.path.join(file_directory, 'statistics.csv')
     with open(results_file, 'w') as csvfile:
         fieldnames = ['epoch', 'running_loss', 'top1', 'top5', 'timestamp']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -294,7 +294,7 @@ def main():
             reader = csv.reader(infile)
             #next(reader, None)  # skip the header
             for row in reader:
-                old_timestamp = float(row[4])     
+                old_timestamp = float(row[4])
         with open(results_file, 'w') as outfile:
             fieldnames = ['epoch', 'running_loss', 'top1', 'top5', 'timestamp']
             writer = csv.DictWriter(outfile, fieldnames=fieldnames)
@@ -307,7 +307,7 @@ def main():
     print('Finished Training')
     torch.save(net.state_dict(), PATH)      #save trained model
 
-    train_test_obj.test()		#validation accuracy
+    train_test_obj.test()       #validation accuracy
     print('test accuracy' , train_test_obj.test_acc)
 
 if __name__ == '__main__':
