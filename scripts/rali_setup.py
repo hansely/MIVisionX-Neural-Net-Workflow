@@ -325,10 +325,11 @@ class InferencePipe(Pipeline):
 
     def get_input_name(self):
         size = self.GetImageNameLength(0)
-        imageName = create_string_buffer(size)
-        imageName = (self.GetImageName(size)).decode()
-        # print(len(imageName), imageName)
-        return imageName
+        #imageName = create_string_buffer(size)
+        #imageName = bytes('', encoding='utf-8')
+        imageName = self.GetImageName(size)
+        print(size, imageName)
+        return imageName[0:size]
 
     def process_validation(self, validation_list):
         for i in range(len(validation_list)):

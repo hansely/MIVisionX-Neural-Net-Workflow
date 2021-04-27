@@ -383,7 +383,7 @@ class modelInference(QtCore.QObject):
                 for i in range(self.modelBatchSizeInt):
                     #process the output tensor
                     start = time.time()
-                    # correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
+                    correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
                     end = time.time()
                     msFrame += (end-start)*1000
                     if (self.verbosePrint):
