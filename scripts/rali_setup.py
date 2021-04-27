@@ -276,12 +276,12 @@ class InferencePipe(Pipeline):
             elif self.raliMode == 4:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(15):
+                for i in range(16):
                     self.copy_img.output = self.copy_img.rali_c_func_call(self._handle,self.resize_img.output,True)
             elif self.raliMode == 5:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(15):
+                for i in range(16):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
         elif self.model_batch_size == 64:
             if self.raliMode == 1:
@@ -317,12 +317,12 @@ class InferencePipe(Pipeline):
             elif self.raliMode == 4:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(63):
+                for i in range(64):
                     self.copy_img.output = self.copy_img.rali_c_func_call(self._handle,self.resize_img.output,True)
             elif self.raliMode == 5:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(63):
+                for i in range(64):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
 
     def get_input_name(self):
