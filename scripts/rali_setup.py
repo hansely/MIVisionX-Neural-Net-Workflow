@@ -324,12 +324,11 @@ class InferencePipe(Pipeline):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
 
     def get_input_name(self):
-        size = self.GetImageNameLength(0)
-        #imageName = create_string_buffer(size)
-        #imageName = bytes('', encoding='utf-8')
-        imageName = self.GetImageName(size)
-        print(size, imageName)
-        return imageName[0:size]
+        self.img_names_length = np.empty(self.rali_batch_size, dtype="int32")
+        self.img_names_size = self.GetImageNameLen(self.img_names_length)
+        # Images names of a batch
+        self.Img_name = self.GetImageName(self.img_names_size)
+        return self.Img_name.decode()
 
     def process_validation(self, validation_list):
         for i in range(len(validation_list)):
