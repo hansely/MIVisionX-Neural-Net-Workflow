@@ -172,6 +172,8 @@ class InferencePipe(Pipeline):
         self.kernel_size = self.create_int_param(3)
         #param for warp affine
         self.affine_matrix_param = [0.35,0.25,0.75,1,1,1]
+        self.affine_matrix_1_param = [0.5, 0 , 0, 2, 1, 1]
+        self.affine_matrix_2_param = [2, 0, 0, 1, 1, 1]
         #param for vignette
         self.vignette_param = self.create_float_param(50)
         #param for blend
@@ -207,13 +209,13 @@ class InferencePipe(Pipeline):
                 self.flip1_img = ops.Flip(flip=self.flip_param)
                 self.rot45_img = ops.Rotate(angle=self.degree_param_45)
             elif raliMode == 2:
-                self.warpAffine1_img = ops.WarpAffine(matrix=[0.5, 0 , 0, 2, None, None]) #squeeze
+                self.warpAffine1_img = ops.WarpAffine(matrix=self.affine_matrix_1_param) #squeeze
                 self.fishEye_img = ops.FishEye()
                 self.lensCorrection_img = ops.LensCorrection(strength = self.strength_param, zoom = self.zoom_param)
             elif raliMode == 3:
-                self.colorTemp1_img = self.ColorTemperature(adjustment_value=self.adjustment_param_10)
-                self.colorTemp2_img = self.ColorTemperature(adjustment_value=self.adjustment_param_20)
-                self.warpAffine2_img = self.warpAffine(matrix=[2, 0, 0, 1, None, None]) #stretch
+                self.colorTemp1_img = ops.ColorTemperature(adjustment_value=self.adjustment_param_10)
+                self.colorTemp2_img = ops.ColorTemperature(adjustment_value=self.adjustment_param_20)
+                self.warpAffine2_img = ops.WarpAffine(matrix=self.affine_matrix_2_param) #stretch
 
     def define_graph(self):
         if self.model_batch_size == 16:
@@ -274,12 +276,12 @@ class InferencePipe(Pipeline):
             elif self.raliMode == 4:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(15):
+                for i in range(16):
                     self.copy_img.output = self.copy_img.rali_c_func_call(self._handle,self.resize_img.output,True)
             elif self.raliMode == 5:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(15):
+                for i in range(16):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
         elif self.model_batch_size == 64:
             if self.raliMode == 1:
@@ -315,21 +317,20 @@ class InferencePipe(Pipeline):
             elif self.raliMode == 4:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(63):
+                for i in range(64):
                     self.copy_img.output = self.copy_img.rali_c_func_call(self._handle,self.resize_img.output,True)
             elif self.raliMode == 5:
                 self.decode.output = self.decode.rali_c_func_call(self._handle,self.data_dir,self.w_img,self.h_img,self.random_shuffle,self.shard_id,self.num_shards,False)
                 self.resize_img.output = self.resize_img.rali_c_func_call(self._handle,self.decode.output,False)
-                for i in range(63):
+                for i in range(64):
                     self.nop_img.output = self.nop_img.rali_c_func_call(self._handle,self.resize_img.output,True)
 
     def get_input_name(self):
-        size = self.GetImageNameLength(0)
-        #imageName = create_string_buffer(size)
-        #imageName = bytes('', encoding='utf-8')
-        imageName = self.GetImageName(size)
-        print(size, imageName)
-        return imageName[0:size]
+        self.img_names_length = np.empty(self.rali_batch_size, dtype="int32")
+        self.img_names_size = self.GetImageNameLen(self.img_names_length)
+        # Images names of a batch
+        self.Img_name = self.GetImageName(self.img_names_size)
+        return self.Img_name.decode()
 
     def process_validation(self, validation_list):
         for i in range(len(validation_list)):
