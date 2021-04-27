@@ -172,6 +172,8 @@ class InferencePipe(Pipeline):
         self.kernel_size = self.create_int_param(3)
         #param for warp affine
         self.affine_matrix_param = [0.35,0.25,0.75,1,1,1]
+        self.affine_matrix_1_param = [0.5, 0 , 0, 2, 1, 1]
+        self.affine_matrix_2_param = [2, 0, 0, 1, 1, 1]
         #param for vignette
         self.vignette_param = self.create_float_param(50)
         #param for blend
@@ -207,13 +209,13 @@ class InferencePipe(Pipeline):
                 self.flip1_img = ops.Flip(flip=self.flip_param)
                 self.rot45_img = ops.Rotate(angle=self.degree_param_45)
             elif raliMode == 2:
-                self.warpAffine1_img = ops.WarpAffine(matrix=[0.5, 0 , 0, 2, None, None]) #squeeze
+                self.warpAffine1_img = ops.WarpAffine(matrix=self.affine_matrix_1_param) #squeeze
                 self.fishEye_img = ops.FishEye()
                 self.lensCorrection_img = ops.LensCorrection(strength = self.strength_param, zoom = self.zoom_param)
             elif raliMode == 3:
-                self.colorTemp1_img = self.ColorTemperature(adjustment_value=self.adjustment_param_10)
-                self.colorTemp2_img = self.ColorTemperature(adjustment_value=self.adjustment_param_20)
-                self.warpAffine2_img = self.warpAffine(matrix=[2, 0, 0, 1, None, None]) #stretch
+                self.colorTemp1_img = ops.ColorTemperature(adjustment_value=self.adjustment_param_10)
+                self.colorTemp2_img = ops.ColorTemperature(adjustment_value=self.adjustment_param_20)
+                self.warpAffine2_img = ops.WarpAffine(matrix=self.affine_matrix_2_param) #stretch
 
     def define_graph(self):
         if self.model_batch_size == 16:
