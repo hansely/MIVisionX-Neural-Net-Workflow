@@ -351,6 +351,7 @@ class modelInference(QtCore.QObject):
                 groundTruthIndex = self.raliEngine.get_ground_truth()
                 groundTruthIndex = int(groundTruthIndex)
                 groundTruthLabel = self.labelNames[groundTruthIndex]
+                groundTruthLabel = groundTruthLabel.split(" ")[1]
 
                 end = time.time()
                 msFrame += (end-start)*1000
@@ -358,14 +359,14 @@ class modelInference(QtCore.QObject):
                     print ('%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms')
     
                 if self.gui:
-                    text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+                    text_width, text_height = cv2.getTextSize(groundTruthLabel, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
                     text_off_x = int(self.w_i/2) - (text_width/2)
                     text_off_y = int(self.h_i-7)
                     box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
                     color = (245, 197, 66)
                     thickness = 3
                     cv2.rectangle(original_image, (text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2), color, thickness)
-                    cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+                    cv2.putText(original_image, groundTruthLabel, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
                     self.origQueue.put(original_image)
                 
                 # call python inference. Returns output tensor with 1000 class probabilites
