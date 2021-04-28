@@ -350,6 +350,8 @@ class modelInference(QtCore.QObject):
                 groundTruthIndex = int(groundTruthIndex)
                 groundTruthLabel = self.labelNames[groundTruthIndex]
                 groundTruthLabel = groundTruthLabel.split(" ")[1]
+                if groundTruthLabel.endswith(','):
+                    groundTruthLabel = groundTruthLabel[:-1]
 
                 end = time.time()
                 msFrame += (end-start)*1000

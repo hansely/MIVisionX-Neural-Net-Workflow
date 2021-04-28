@@ -96,16 +96,16 @@ class InferenceControl(QtWidgets.QMainWindow):
         self.gui_checkBox.setChecked(True)
         self.readSetupFile()
 
-        self.file_lineEdit.setText("/home/hansel/MIVisionX/onnxModels/squeezenet/model.onnx")
+        self.file_lineEdit.setText("/home/svcbuild/onnxModels/squeezenet1.0-8.onnx")
         self.format_comboBox.setCurrentIndex(1)
-        self.name_lineEdit.setText("sq")
+        self.name_lineEdit.setText("squeezenet_onnx")
         self.idims_lineEdit.setText("3,224,224")
         self.odims_lineEdit.setText("1000,1,1")
         self.output_lineEdit.setText("./")
-        self.label_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/labels.txt")
-        self.image_lineEdit.setText("/home/hansel/MIVisionX/MIVisionX/data/images/AMD-tinyDataSet")
-        self.val_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/AMD-tinyDataSet-val.txt")
-        self.hier_lineEdit.setText("/home/hansel/MIVisionX-Neural-Net-Workflow/sample/hierarchy.csv")
+        self.label_lineEdit.setText("/home/svcbuild/work/lk/MIVisionX-Neural-Net-Workflow/sample/labels.txt")
+        self.image_lineEdit.setText("/home/svcbuild/work/lk/MIVisionX/data/images/AMD-tinyDataSet")
+        self.val_lineEdit.setText("/home/svcbuild/work/lk/MIVisionX-Neural-Net-Workflow/sample/AMD-tinyDataSet-val.txt")
+        self.hier_lineEdit.setText("/home/svcbuild/work/lk/MIVisionX-Neural-Net-Workflow/sample/hierarchy.csv")
       
     def confirmMode(self):
         self.tabWidget.setEnabled(True)
