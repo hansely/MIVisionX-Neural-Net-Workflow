@@ -227,7 +227,6 @@ class InferenceControl(QtWidgets.QMainWindow):
                         self.name_lineEdit.setText(tokens[1])
                         self.file_lineEdit.setText(tokens[2])
                         batch_index = 0 if tokens[3] == '64' else 1
-                        self.batch_comboBox.setCurrentIndex(batch_index)
                         self.idims_lineEdit.setText(tokens[4])
                         self.odims_lineEdit.setText(tokens[5])
                         self.label_lineEdit.setText(tokens[6])
@@ -318,7 +317,7 @@ class InferenceControl(QtWidgets.QMainWindow):
         model_format = (str)(self.format_comboBox.currentText())
         model_name = (str)(self.name_lineEdit.text())
         model_location = (str)(self.file_lineEdit.text())
-        batch_size = (str)(self.batch_comboBox.currentText())
+        batch_size = (str)(self.batch_comboBox_2.currentText())
         rali_mode = self.mode_comboBox.currentIndex() + 1 
         input_dims = (str)('%s' % (self.idims_lineEdit.text()))
         output_dims = (str)('%s' % (self.odims_lineEdit.text()))
