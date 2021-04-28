@@ -317,7 +317,8 @@ class modelInference(QtCore.QObject):
                 topIndex.append(x)
                 # topLabels.append(labelNames[x])
                 topProb.append(softmaxOutput[x])
-
+            #print("topIndex = ",topIndex)
+            #print("topProb = ",topProb)
         return topIndex, topProb
 
     def setIntensity(self, intensity):
@@ -349,9 +350,8 @@ class modelInference(QtCore.QObject):
                 groundTruthIndex = self.raliEngine.get_ground_truth()
                 groundTruthIndex = int(groundTruthIndex)
                 groundTruthLabel = self.labelNames[groundTruthIndex]
-                groundTruthLabel = groundTruthLabel.split(" ")[1]
-                if groundTruthLabel.endswith(','):
-                    groundTruthLabel = groundTruthLabel[:-1]
+                groundTruthLabel = groundTruthLabel.split(" ", 1)[1]
+                groundTruthLabel = groundTruthLabel.split(",", 1)[0]
 
                 end = time.time()
                 msFrame += (end-start)*1000
@@ -457,7 +457,6 @@ class modelInference(QtCore.QObject):
         countPerAugmentation = self.augStats[i]
 
         correctResult = False
-        #print groundTruthIndex, topIndex
         # augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
         if(groundTruthIndex == topIndex[4 + i*4]):
             self.totalStats[0] += 1
@@ -472,7 +471,6 @@ class modelInference(QtCore.QObject):
         else:
             self.totalStats[2] += 1
             countPerAugmentation[2] += 1
-
         self.augStats[i] = countPerAugmentation
         return correctResult
 
