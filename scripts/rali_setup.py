@@ -112,7 +112,7 @@ raliList_mode5_16 = ['original', 'nop', 'nop', 'nop',
 
 # Class to initialize Rali and call the augmentations 
 class InferencePipe(Pipeline):
-    def __init__(self, image_validation, model_batch_size, raliMode, h_img, w_img, rali_batch_size, tensor_layout, num_threads, device_id, data_dir, crop, rali_cpu = True):
+    def __init__(self, image_validation, model_batch_size, raliMode, c_img, h_img, w_img, rali_batch_size, tensor_dtype, multiplier, offset, tensor_layout, num_threads, device_id, data_dir, crop, rali_cpu = True):
         super(InferencePipe, self).__init__(rali_batch_size, num_threads, device_id, seed=12 + device_id,rali_cpu=rali_cpu)
         #world_size = 1
         #local_rank = 0
@@ -128,9 +128,22 @@ class InferencePipe(Pipeline):
         self.model_batch_size = model_batch_size
         self.raliMode =  raliMode
         self.data_dir = data_dir
+        self.c_img = c_img
         self.h_img = h_img
         self.w_img = w_img
         self.rali_batch_size = rali_batch_size
+        self.tensor_dtype = tensor_dtype
+        self.multiplier = multiplier
+        self.offset = offset
+        self.tensor_layout = tensor_layout
+        self.reverse_channels = False
+        #for tensor output
+        self.bs = self.rali_batch_size
+        if self.tensor_dtype == types.FLOAT:
+            self.out_tensor = np.zeros(( self.bs*self.model_batch_size, self.c_img, int(self.h_img/self.bs), self.w_img,), dtype = "float32")
+        elif self.tensor_dtype == types.FLOAT16:
+            self.out_tensor = np.zeros(( self.bs*self.model_batch_size, self.c_img, int(self.h_img/self.bs), self.w_img,), dtype = "float16")
+        
         self.random_shuffle = True
         self.shard_id = 0
         self.num_shards = 1
@@ -184,7 +197,7 @@ class InferencePipe(Pipeline):
         self.rali_list = None
 
         self.decode = ops.ImageDecoder()
-        self.resize_img = ops.Resize(resize_x=self.h_img, resize_y=self.w_img)
+        self.resize_img = ops.Resize(resize_x=224, resize_y=224)
         self.warped_img = ops.WarpAffine(matrix=self.affine_matrix_param)
         self.contrast_img = ops.Contrast(min_contrast=self.min_param, max_contrast=self.max_param)
         self.rain_img = ops.Rain(rain=self.rain_param, rain_width = self.rain_width_param, rain_height = self.rain_height_param, rain_transparency =self.rain_transparency_param)
@@ -404,7 +417,11 @@ class InferencePipe(Pipeline):
             #raise StopIteration
         self.renew_parameters()
         self.out_image = imageIterator.next()
-        return self.out_image
+        if(types.NCHW == self.tensor_layout):
+            self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, int(self.tensor_dtype))
+        else:
+            self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, int(self.tensor_dtype))
+        return self.out_image, self.out_tensor
 
     def get_rali_list(self, raliMode, model_batch_size):
         if model_batch_size == 16:

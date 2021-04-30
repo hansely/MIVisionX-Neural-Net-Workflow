@@ -296,7 +296,7 @@ class modelInference(QtCore.QObject):
 
         # Setup Rali Data Loader. 
         rali_batch_size = 1
-        self.raliEngine = InferencePipe(imageValidation, self.modelBatchSizeInt, self.rali_mode, self.h_i, self.w_i, rali_batch_size, tensor_layout = types.NCHW, num_threads=1, device_id=0, data_dir=self.inputImageDir, crop=224, rali_cpu=True)
+        self.raliEngine = InferencePipe(imageValidation, self.modelBatchSizeInt, self.rali_mode, self.c_i, self.h_i, self.w_i, rali_batch_size, self.tensor_dtype, self.Mx, self.Ax, tensor_layout = types.NCHW, num_threads=1, device_id=0, data_dir=self.inputImageDir, crop=224, rali_cpu=True)
         self.raliEngine.verify_graph()
         self.imageIterator = RALI_iterator(self.raliEngine)
         self.raliList = self.raliEngine.get_rali_list(self.rali_mode, self.modelBatchSizeInt)
@@ -317,8 +317,6 @@ class modelInference(QtCore.QObject):
                 topIndex.append(x)
                 # topLabels.append(labelNames[x])
                 topProb.append(softmaxOutput[x])
-            #print("topIndex = ",topIndex)
-            #print("topProb = ",topProb)
         return topIndex, topProb
 
     def setIntensity(self, intensity):
@@ -335,16 +333,17 @@ class modelInference(QtCore.QObject):
             while not self.pauseState and self.raliEngine.getRemainingImages() > 0:
                 msFrame = 0.0
                 start = time.time()
-                image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
-                image_batch = cv2.cvtColor(image_tensor, cv2.COLOR_RGB2BGR)
+                image_RGB, image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
+                print(image_tensor.dtype)
+                image_batch = cv2.cvtColor(image_RGB, cv2.COLOR_RGB2BGR)
                 original_image = image_batch[0:self.h_i, 0:self.w_i]
                 cloned_image = np.copy(image_batch)
-                if self.FP16inference == False:
+                """if self.FP16inference == False:
                     frame = image_tensor.astype('float32')
                 else:
                     frame = image_tensor.astype('float16')
-                #frame = image_tensor
-
+                """
+                frame = image_tensor
                 #get image file name and ground truth
                 imageFileName = self.raliEngine.get_input_name()
                 groundTruthIndex = self.raliEngine.get_ground_truth()
