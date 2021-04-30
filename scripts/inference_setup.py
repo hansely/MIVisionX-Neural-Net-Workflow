@@ -338,11 +338,6 @@ class modelInference(QtCore.QObject):
                 image_batch = cv2.cvtColor(image_RGB, cv2.COLOR_RGB2BGR)
                 original_image = image_batch[0:self.h_i, 0:self.w_i]
                 cloned_image = np.copy(image_batch)
-                """if self.FP16inference == False:
-                    frame = image_tensor.astype('float32')
-                else:
-                    frame = image_tensor.astype('float16')
-                """
                 frame = image_tensor
                 #get image file name and ground truth
                 imageFileName = self.raliEngine.get_input_name()
