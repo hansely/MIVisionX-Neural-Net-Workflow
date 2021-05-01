@@ -417,10 +417,11 @@ class InferencePipe(Pipeline):
             #raise StopIteration
         self.renew_parameters()
         self.out_image = imageIterator.next()
-        if(types.NCHW == self.tensor_layout):
-            self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, int(self.tensor_dtype))
-        else:
-            self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, int(self.tensor_dtype))
+        # print (self.out_tensor.shape)
+        # if(types.NCHW == self.tensor_layout):
+        #     self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, int(self.tensor_dtype))
+        # else:
+        #     self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, int(self.tensor_dtype))
         return self.out_image, self.out_tensor
 
     def get_rali_list(self, raliMode, model_batch_size):
