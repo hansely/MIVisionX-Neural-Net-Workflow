@@ -92,7 +92,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.cpuName_label.setText(self.cpu_name)
         self.gpuName_label.setText(self.gpu_name)
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
-        self.imagesFrame.setStyleSheet(".QFrame {border-width: 20px; border-image: url(./data/images/filmStrip.png);}")
+        self.imagesFrame.setStyleSheet(".QFrame {border-width: 20px; border-image: url(../data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")

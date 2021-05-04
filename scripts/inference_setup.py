@@ -330,7 +330,7 @@ class modelInference(QtCore.QObject):
 
     def runInference(self):
         while self.setupDone:
-            while not self.pauseState and self.raliEngine.getRemainingImages() > 0:
+            while not self.pauseState:
                 msFrame = 0.0
                 start = time.time()
                 image_RGB, image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
@@ -418,6 +418,7 @@ class modelInference(QtCore.QObject):
                         self.generateADAT(self.modelName, self.hierarchy)
                         self.adatFlag = True
                     self.resetStats()
+                    self.imageIterator.reset()
 
     def updateFPS(self, msFrame):
         self.totalFPS = 1000/(msFrame/self.modelBatchSizeInt)
