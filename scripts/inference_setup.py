@@ -268,7 +268,7 @@ class modelInference(QtCore.QObject):
                     print("ERROR: Converting NNIR to OpenVX Failed")
                     quit()
 
-        os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+        # os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
         print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
         # create inference classifier
@@ -334,7 +334,6 @@ class modelInference(QtCore.QObject):
                 msFrame = 0.0
                 start = time.time()
                 image_RGB, image_tensor = self.raliEngine.get_next_augmentation(self.imageIterator)
-                print(image_tensor.dtype)
                 image_batch = cv2.cvtColor(image_RGB, cv2.COLOR_RGB2BGR)
                 original_image = image_batch[0:self.h_i, 0:self.w_i]
                 cloned_image = np.copy(image_batch)

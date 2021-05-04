@@ -1035,7 +1035,7 @@ color: rgb(0, 0, 0);</string>
              </sizepolicy>
             </property>
             <property name="text">
-             <string>RALI</string>
+             <string>rocAL</string>
             </property>
            </widget>
           </item>

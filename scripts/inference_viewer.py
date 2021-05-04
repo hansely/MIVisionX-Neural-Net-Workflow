@@ -65,18 +65,18 @@ class InferenceViewer(QtGui.QMainWindow):
             self.legend = None
             self.lastAugName = None
             self.pen = pg.mkPen('w', width=4)
-            self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
-            self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
-            self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
-            self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
-            self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
-            self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
-            self.docker_pixmap = QPixmap("./data/images/Docker.png")
-            self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
-            self.rali_pixmap = QPixmap("./data/images/RALI.png")
-            self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
-            self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
-            self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
+            self.AMD_Radeon_pixmap = QPixmap("../data/images/AMD_Radeon.png")
+            self.AMD_Radeon_white_pixmap = QPixmap("../data/images/AMD_Radeon-white.png")
+            self.MIVisionX_pixmap = QPixmap("../data/images/MIVisionX-logo.png")
+            self.MIVisionX_white_pixmap = QPixmap("../data/images/MIVisionX-logo-white.png")
+            self.EPYC_pixmap = QPixmap("../data/images/EPYC-blue.png")
+            self.EPYC_white_pixmap = QPixmap("../data/images/EPYC-blue-white.png")
+            self.docker_pixmap = QPixmap("../data/images/Docker.png")
+            self.singularity_pixmap = QPixmap("../data/images/Singularity.png")
+            self.rali_pixmap = QPixmap("../data/images/rocAL-black.png")
+            self.rali_white_pixmap = QPixmap("../data/images/rocAL-white.png")
+            self.graph_image_pixmap = QPixmap("../data/images/Graph-image.png")
+            self.graph_image_white_pixmap = QPixmap("../data/images/Graph-image-white.png")
             
             self.initUI()
             self.updateTimer = QTimer()
@@ -160,6 +160,7 @@ class InferenceViewer(QtGui.QMainWindow):
                 
 
     def resetViewer(self):
+        print('reset')
         self.imgCount = 0
         del self.x[:]
         self.x.append(0)

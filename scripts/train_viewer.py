@@ -53,7 +53,7 @@ class TrainViewer(QtGui.QMainWindow):
             self.MIVisionX_white_pixmap = QPixmap("../data/images/MIVisionX-logo-white.png")
             self.EPYC_pixmap = QPixmap("../data/images/EPYC-blue.png")
             self.EPYC_white_pixmap = QPixmap("../data/images/EPYC-blue-white.png")
-            self.docker_pixmap = QPixmap("./data/images/Docker.png")
+            self.docker_pixmap = QPixmap("../data/images/Docker.png")
             self.singularity_pixmap = QPixmap("../data/images/Singularity.png")
             self.rali_pixmap = QPixmap("../data/images/RALI.png")
             self.rali_white_pixmap = QPixmap("../data/images/RALI-white.png")
